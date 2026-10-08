@@ -30,20 +30,22 @@ export function normalizePhoneNumber(phone: string): string {
 
 /**
  * Generates official BZK badge and display name strictly adhering to:
- * Filles  : 🌸 SARAH 𝑩𝒁𝑲 🌪️ (sans guillemets)
- * Garçons : 🥷 KAYDO 𝑩𝒁𝑲 🌪️ (sans guillemets)
+ * Filles  : 🌸 NOM BZK 🌪️
+ * Garçons : 🥷 NOM BZK 🌪️
  */
 export function generateBadgeAndDisplayName(firstName: string, gender: Gender) {
-  // Strip any accidental enclosing quotes if user already typed them or stored with them
+  // Strip any accidental enclosing quotes
   let cleanName = (firstName || 'MEMBRE').trim().replace(/^["'«»“”„]+|["'«»“”„]+$/g, '').trim();
+  // Remove any existing emojis or artifacts at the start (including duplicates)
+  cleanName = cleanName.replace(/^[🌸🥷🌪️\sBZK]+/g, '').trim();
   if (!cleanName) cleanName = 'MEMBRE';
 
-  // Capitalize neatly or preserve uppercase as requested
+  // Capitalize
   const upperName = cleanName.toUpperCase();
   const BZK_STYLED = '𝑩𝒁𝑲';
 
   if (gender === 'female') {
-    const badge = `🌸 ${BZK_STYLED} 🌪️`;
+    const badge = `🌸 ${upperName} ${BZK_STYLED} 🌪️`;
     const displayName = `🌸 ${upperName} ${BZK_STYLED} 🌪️`;
     return {
       firstName: cleanName,
@@ -51,8 +53,8 @@ export function generateBadgeAndDisplayName(firstName: string, gender: Gender) {
       displayName,
     };
   } else {
-    const badge = `🥷`;
-    const displayName = `🥷 ${upperName}`;
+    const badge = `🥷 ${upperName} ${BZK_STYLED} 🌪️`;
+    const displayName = `🥷 ${upperName} ${BZK_STYLED} 🌪️`;
     return {
       firstName: cleanName,
       badge,
@@ -62,15 +64,12 @@ export function generateBadgeAndDisplayName(firstName: string, gender: Gender) {
 }
 
 /**
- * Met à jour, normalise et supprime les doublons de tous les contacts enregistrés :
- * 🌸 NOM 𝑩𝒁𝑲 🌪️ pour les filles
- * 🥷 NOM 𝑩𝒁𝑲 🌪️ pour les garçons
- * Retire définitivement tous les guillemets de tous les contacts existants.
+ * Met à jour, normalise et supprime les doublons de tous les contacts enregistrés
  */
-let hasMigrated = false;
+let hasMigrated_v4 = false;
 export async function syncExistingContactsFormat(): Promise<void> {
-  if (hasMigrated) return;
-  hasMigrated = true;
+  if (hasMigrated_v4) return;
+  hasMigrated_v4 = true;
   try {
     const snap = await getDocs(collection(db, 'users'));
     if (snap.empty) return;
@@ -93,8 +92,11 @@ export async function syncExistingContactsFormat(): Promise<void> {
         seenPhones.add(phoneNorm);
       }
 
-      // Clean first name from any quotes
-      const cleanFirstName = (u.firstName || '').replace(/^["'«»“”„]+|["'«»“”„]+$/g, '').trim() || 'MEMBRE';
+      // Clean first name from any quotes AND emojis/artifacts
+      let cleanFirstName = (u.firstName || '').replace(/^["'«»“”„]+|["'«»“”„]+$/g, '').trim();
+      cleanFirstName = cleanFirstName.replace(/^[🌸🥷🌪️\sBZK]+/g, '').trim();
+      if (!cleanFirstName) cleanFirstName = 'MEMBRE';
+
       const computed = generateBadgeAndDisplayName(cleanFirstName, u.gender);
 
       if (u.displayName !== computed.displayName || u.badge !== computed.badge || !u.phoneNormalized || u.firstName !== cleanFirstName) {
