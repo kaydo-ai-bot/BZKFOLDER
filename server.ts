@@ -101,6 +101,35 @@ function requireAdminAuth(req: express.Request, res: express.Response, next: exp
 
 // --- API ROUTES ---
 
+// Admin Google Login (Only kberryprime@gmail.com allowed)
+app.post('/api/admin/google-login', (req, res) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || email.trim().toLowerCase() !== 'kberryprime@gmail.com') {
+    return res.status(403).json({
+      success: false,
+      message: 'Accès refusé. Seul le compte Google kberryprime@gmail.com est autorisé à accéder à l\'espace propriétaire.',
+    });
+  }
+
+  const token = generateSessionToken();
+  const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+
+  validAdminSessions.set(token, { createdAt: Date.now(), expiresAt });
+
+  res.cookie('kaydo_admin_session', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+
+  return res.json({
+    success: true,
+    message: 'Authentification Google propriétaire réussie.',
+  });
+});
+
 // Admin Login
 app.post('/api/admin/login', (req, res) => {
   const { accessKey } = req.body;

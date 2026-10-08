@@ -7,7 +7,6 @@ import {
   normalizePhoneNumber,
   checkPhoneExists,
 } from '../services/users';
-import { auth } from '../lib/firebase';
 
 interface ToastMessage {
   id: string;
@@ -31,7 +30,8 @@ interface AuthContextType {
   }) => Promise<UserProfile>;
   loginAccount: (phone: string) => Promise<UserProfile>;
   logoutUser: () => Promise<void>;
-  loginAsGoogleAdmin: () => Promise<boolean>;
+  loginAsGoogleAdmin: (email: string) => Promise<boolean>;
+  setNewAdminCode: (newCode: string) => Promise<boolean>;
   logoutAdminSession: () => Promise<void>;
   reloadProfile: () => Promise<void>;
   checkAdminSession: () => Promise<boolean>;
@@ -169,30 +169,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addToast('Vous êtes déconnecté.', 'info');
   };
 
-  const loginAsGoogleAdmin = async (): Promise<boolean> => {
+  const loginAsGoogleAdmin = async (email: string): Promise<boolean> => {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser || currentUser.email?.toLowerCase() !== 'kberryprime@gmail.com') {
-        addToast('Accès refusé. Espace réservé au propriétaire.', 'error');
-        return false;
-      }
-
       const res = await fetch('/api/admin/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: currentUser.email }),
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        addToast('Échec de la connexion propriétaire.', 'error');
+        addToast(data.message || 'Accès refusé.', 'error');
         return false;
       }
 
       setIsAdmin(true);
-      addToast('Authentification propriétaire réussie !', 'success');
+      addToast('Accès propriétaire Google autorisé (kberryprime@gmail.com) !', 'success');
       return true;
     } catch (err: any) {
-      addToast('Erreur lors de la connexion.', 'error');
+      addToast('Erreur lors de la connexion Google.', 'error');
+      return false;
+    }
+  };
+
+  const setNewAdminCode = async (newCode: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/admin/set-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newCode: newCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        addToast(data.message || 'Échec de la mise à jour du code.', 'error');
+        return false;
+      }
+
+      setIsAdmin(true);
+      addToast('Nouveau code propriétaire enregistré avec succès !', 'success');
+      return true;
+    } catch (err: any) {
+      addToast('Erreur lors de l\'enregistrement du code.', 'error');
       return false;
     }
   };
@@ -220,6 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAccount,
         logoutUser,
         loginAsGoogleAdmin,
+        setNewAdminCode,
         logoutAdminSession,
         reloadProfile,
         checkAdminSession,

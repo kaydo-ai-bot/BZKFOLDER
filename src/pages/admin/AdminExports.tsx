@@ -58,6 +58,9 @@ export const AdminExports: React.FC = () => {
         <p className="text-xs text-gray-400">
           Générez un fichier sécurisé contenant la liste complète des membres BZK autorisés.
         </p>
+        <div className="mt-3 p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] text-purple-200">
+          💡 <strong>Conservation des données :</strong> Le téléchargement génère une copie locale. Tous les numéros restent en permanence enregistrés sur le site pour les versions futures et le répertoire communautaire.
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

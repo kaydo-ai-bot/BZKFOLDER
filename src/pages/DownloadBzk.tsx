@@ -53,6 +53,9 @@ export const DownloadBzk: React.FC<DownloadBzkProps> = ({ onNavigate }) => {
           <p className="text-xs sm:text-sm text-gray-300 max-w-md mx-auto pt-1 leading-relaxed">
             Générez et téléchargez directement le fichier <span className="text-purple-300 font-mono font-bold">KAYDO_BZK_CONTACTS</span> pour enregistrer l'ensemble des membres BZK dans votre téléphone.
           </p>
+          <div className="mt-3 p-3 rounded-xl bg-purple-900/30 border border-purple-500/30 text-[11px] text-purple-200">
+            💡 <strong>Sauvegarde Permanente :</strong> Même après le téléchargement, tous les numéros restent en toute sécurité sur le site (base de données) pour les versions futures et le répertoire communautaire.
+          </div>
         </div>
 
         {/* BUTTON */}
