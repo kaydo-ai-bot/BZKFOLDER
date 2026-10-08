@@ -4,6 +4,7 @@ import {
   getUserProfile,
   createUserProfile,
   updateUserProfile,
+  deleteUserProfile,
   normalizePhoneNumber,
   checkPhoneExists,
 } from '../services/users';
@@ -120,13 +121,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Numéro de téléphone invalide.');
     }
 
-    // Duplicate Check in Firestore
+    // Duplicate Check in Firestore: If phone already exists, delete old profile and replace with new submission (new name/badge)
     const existing = await checkPhoneExists(normalized);
     if (existing) {
-      localStorage.setItem('kaydo_bzk_user_id', existing.id);
-      setProfile(existing);
-      addToast(`Ce numéro est déjà enregistré : Bienvenue ${existing.displayName} !`, 'info');
-      return existing;
+      try {
+        await deleteUserProfile(existing.id);
+      } catch (e) {
+        console.warn('Could not delete old profile for replacement:', e);
+      }
     }
 
     // Generate unique BZK ID for Firestore
@@ -146,7 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     localStorage.setItem('kaydo_bzk_user_id', newUid);
     setProfile(created);
-    addToast('Inscription BZK réussie !', 'success');
+    addToast(existing ? 'Ancien profil remplacé par la nouvelle inscription BZK !' : 'Inscription BZK réussie !', 'success');
     return created;
   };
 
