@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection Health Check Rule
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Users Collection (Instant BZK Registrations & Profiles)
+    match /users/{userId} {
+      // Allow read for directory and verification
+      allow read: if true;
+
+      // Allow instant BZK registration without blocking
+      allow create: if request.resource.data.id == userId
+        && request.resource.data.consent == true
+        && request.resource.data.gender in ['male', 'female']
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 5
+        && request.resource.data.phoneNormalized is string
+        && request.resource.data.badge is string;
+
+      // Allow profile updates and deletions
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    // Statuses Collection (24h Stories)
+    match /statuses/{statusId} {
+      allow read: if true;
+      allow create: if request.resource.data.content is string
+        && request.resource.data.content.size() <= 1000;
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    // Admin Audit Logs Collection
+    match /adminLogs/{logId} {
+      allow read, write: if false;
+    }
+  }
+}

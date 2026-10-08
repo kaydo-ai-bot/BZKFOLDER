@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile registered in KAYDO FOLDER with phone number and BZK badge",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "phone": { "type": "string", "minLength": 5, "maxLength": 30 },
+        "phoneNormalized": { "type": "string", "minLength": 5, "maxLength": 30 },
+        "firstName": { "type": "string", "maxLength": 80 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "badge": { "type": "string", "maxLength": 20 },
+        "gender": { "type": "string", "enum": ["male", "female"] },
+        "country": { "type": "string", "maxLength": 60 },
+        "profilePhoto": { "type": "string", "maxLength": 1000 },
+        "consent": { "type": "boolean" },
+        "statusSharingAllowed": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "phone", "phoneNormalized", "firstName", "displayName", "badge", "gender", "country", "consent", "createdAt", "isActive"]
+    },
+    "Status": {
+      "title": "User Status",
+      "description": "Internal 24-hour status published voluntarily by KAYDO FOLDER users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string", "maxLength": 100 },
+        "userBadge": { "type": "string", "maxLength": 20 },
+        "userPhoto": { "type": "string", "maxLength": 1000 },
+        "content": { "type": "string", "maxLength": 1000 },
+        "mediaUrl": { "type": "string", "maxLength": 1000 },
+        "mediaType": { "type": "string", "enum": ["text", "image", "video"] },
+        "createdAt": { "type": "string" },
+        "expiresAt": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "contacts"] }
+      },
+      "required": ["id", "userId", "userDisplayName", "userBadge", "content", "createdAt", "expiresAt"]
+    },
+    "AdminLog": {
+      "title": "Admin Audit Log",
+      "description": "Security and action log for administrator activities in KAYDO FOLDER",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "action": { "type": "string", "maxLength": 50 },
+        "result": { "type": "string", "maxLength": 20 },
+        "resourceId": { "type": "string", "maxLength": 100 },
+        "details": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "timestamp", "action", "result"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile collection indexed by user UID"
+    },
+    "/statuses/{statusId}": {
+      "schema": { "$ref": "#/entities/Status" },
+      "description": "24-hour status stories published by users"
+    },
+    "/adminLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminLog" },
+      "description": "Admin action audit trail"
+    }
+  }
+}

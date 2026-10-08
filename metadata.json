@@ -1,0 +1,6 @@
+{
+  "name": "BZK FOLDER 🥷 BY KAYDO BZK 🥷",
+  "description": "Plateforme professionnelle d'annuaire et partage de statuts avec badges automatiques BZK et espace administrateur sécurisé.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
