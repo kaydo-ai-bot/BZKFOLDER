@@ -15,6 +15,7 @@ import {
   RefreshCw,
   LogOut,
   FolderDown,
+  FolderUp,
   Copy,
   Check,
   AlertTriangle,
@@ -26,9 +27,10 @@ import {
 
 interface AdminContactsProps {
   onNavigate: (path: string) => void;
+  onOpenImport?: () => void;
 }
 
-export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate }) => {
+export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate, onOpenImport }) => {
   const { addToast, logoutAdminSession } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,6 +210,17 @@ export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate }) => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 border border-emerald-400/40 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
+              title="Importer des contacts automatiquement depuis un fichier VCF"
+            >
+              <FolderUp className="w-4 h-4 text-emerald-200" />
+              <span>IMPORTER VCF</span>
+            </button>
+          )}
 
           <button
             onClick={handleExportVcf}

@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   FolderKey,
+  FolderUp,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -36,6 +37,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'contacts', label: 'Contacts', icon: Contact },
+    { id: 'import', label: 'Importer VCF', icon: FolderUp },
     { id: 'users', label: 'Utilisateurs', icon: Users },
     { id: 'statuses', label: 'Statuts', icon: Sparkles },
     { id: 'exports', label: 'Exports', icon: Download },
