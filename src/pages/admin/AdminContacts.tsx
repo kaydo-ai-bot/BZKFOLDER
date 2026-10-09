@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../../types';
 import { getAdminContacts, deleteAdminContact, clearAllAdminContacts, updateAdminContact } from '../../services/users';
+import { downloadAllBzkContacts } from '../../services/contactExporter';
 import { useAuth } from '../../context/AuthContext';
 import {
   Search,
@@ -129,13 +130,36 @@ export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate }) => {
   };
 
   const handleExportVcf = () => {
-    window.location.href = '/api/admin/export/vcf';
-    addToast('Téléchargement du fichier VCF démarré.', 'success');
+    if (!users || users.length === 0) {
+      addToast('Aucun contact disponible pour l\'export.', 'error');
+      return;
+    }
+    downloadAllBzkContacts(users);
+    addToast(`Export VCF réussi (${users.length} contacts). Tous les numéros restent en permanence sur le site !`, 'success');
   };
 
   const handleExportCsv = () => {
-    window.location.href = '/api/admin/export/csv';
-    addToast('Téléchargement du fichier CSV démarré.', 'success');
+    if (!users || users.length === 0) {
+      addToast('Aucun contact disponible pour l\'export.', 'error');
+      return;
+    }
+    const headers = 'Nom,Numéro,Pays,Sexe,Date Inscription\n';
+    const rows = users
+      .map(
+        (u) =>
+          `"${(u.displayName || u.firstName || '').replace(/"/g, '""')}","${u.phone || ''}","${u.country || ''}","${u.gender || ''}","${u.createdAt || ''}"`
+      )
+      .join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `BZK_CONTACTS_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addToast(`Export CSV réussi (${users.length} contacts). Tous les numéros restent en permanence sur le site !`, 'success');
   };
 
   // Statistics Calculation
@@ -211,6 +235,22 @@ export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate }) => {
             <span>DÉCONNEXION</span>
           </button>
         </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* PERMANENT STORAGE GUARANTEE BANNER */}
+      {/* ======================================================== */}
+      <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-xs flex items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <Shield className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div>
+            <span className="font-bold text-white">Sauvegarde permanente active : </span>
+            <span>Tous les numéros ({totalInscrits}) restent enregistrés sur le site pour la prochaine version. L'exportation de contacts (VCF/CSV) ne supprime aucun numéro.</span>
+          </div>
+        </div>
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0 hidden sm:inline-block">
+          100% SÉCURISÉ
+        </span>
       </div>
 
       {/* ======================================================== */}
@@ -384,7 +424,6 @@ export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate }) => {
                       {/* NOM */}
                       <td className="py-3 px-4 font-bold text-white">
                         <div className="flex items-center gap-2">
-                          <span>{user.gender === 'female' ? '🌸' : '🥷'}</span>
                           <span>{user.displayName || user.firstName}</span>
                         </div>
                       </td>
@@ -471,7 +510,6 @@ export const AdminContacts: React.FC<AdminContactsProps> = ({ onNavigate }) => {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-sm font-extrabold text-white flex items-center gap-1.5">
-                        <span>{user.gender === 'female' ? '🌸' : '🥷'}</span>
                         <span>{user.displayName || user.firstName}</span>
                       </div>
                       <div className="text-[11px] text-zinc-400 mt-0.5">

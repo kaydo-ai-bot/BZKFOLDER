@@ -85,7 +85,7 @@ export const BzkProfile: React.FC<BzkProfileProps> = ({ id, onNavigate }) => {
         {/* BZK NAME */}
         <div>
           <div className="text-[10px] uppercase font-mono tracking-wider text-purple-400 font-bold mb-1">
-            Membre Certifié KAYDO FOLDER BZK
+            Membre Certifié BZK FOLDER 🥷 BY KAYDO BZK 🥷
           </div>
           <h1 className="text-2xl font-black text-white">{profile.displayName}</h1>
         </div>

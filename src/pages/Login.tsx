@@ -41,9 +41,9 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
               <FolderKey className="w-6 h-6 text-purple-400" />
             </div>
           </div>
-          <h2 className="text-2xl font-black text-white">Connexion KAYDO FOLDER</h2>
+          <h2 className="text-2xl font-black text-white">Connexion BZK FOLDER</h2>
           <p className="text-xs text-gray-400">
-            Saisissez votre numéro de téléphone pour vous connecter instantanément.
+            Saisissez votre numéro (+509..., 509... ou 8 chiffres) pour vous connecter.
           </p>
         </div>
 
@@ -90,16 +90,16 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
               onClick={() => onNavigate('/register')}
               className="text-purple-300 font-bold hover:underline"
             >
-              Rejoindre KAYDO FOLDER
+              Rejoindre BZK FOLDER
             </button>
           </div>
           <div className="pt-2">
             <button
               onClick={() => onNavigate('/admin/login')}
-              className="text-gray-500 hover:text-rose-400 text-[11px] transition flex items-center justify-center gap-1 mx-auto"
+              className="text-gray-500 hover:text-cyan-400 text-[11px] transition flex items-center justify-center gap-1 mx-auto"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              KAYDO ADMIN
+              ESPACE PROPRIÉTAIRE
             </button>
           </div>
         </div>

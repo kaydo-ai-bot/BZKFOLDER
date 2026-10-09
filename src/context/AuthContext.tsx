@@ -116,19 +116,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Veuillez accepter les conditions de traitement de votre numéro.');
     }
 
-    const normalized = normalizePhoneNumber(phone);
+    const normalized = normalizePhoneNumber(phone, country);
     if (!normalized || normalized.length < 6) {
       throw new Error('Numéro de téléphone invalide.');
     }
 
-    // Duplicate Check in Firestore: If phone already exists, delete old profile and replace with new submission (new name/badge)
-    const existing = await checkPhoneExists(normalized);
+    // Duplicate Check in Firestore: If phone already exists (+509..., 509..., or 8 digits), update profile in place with new name/badge
+    const existing = await checkPhoneExists(phone, country);
     if (existing) {
-      try {
-        await deleteUserProfile(existing.id);
-      } catch (e) {
-        console.warn('Could not delete old profile for replacement:', e);
-      }
+      await updateUserProfile(existing.id, {
+        firstName,
+        gender,
+        country,
+        phone: normalized,
+        phoneNormalized: normalized,
+      });
+      const updated = (await getUserProfile(existing.id)) || existing;
+      localStorage.setItem('kaydo_bzk_user_id', existing.id);
+      setProfile(updated);
+      addToast('Profil BZK mis à jour avec votre nouveau nom !', 'success');
+      return updated;
     }
 
     // Generate unique BZK ID for Firestore
@@ -136,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const created = await createUserProfile({
       id: newUid,
-      phone,
+      phone: normalized,
       phoneNormalized: normalized,
       firstName,
       gender,
@@ -153,8 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAccount = async (phone: string): Promise<UserProfile> => {
-    const norm = normalizePhoneNumber(phone);
-    const matched = await checkPhoneExists(norm);
+    const matched = await checkPhoneExists(phone);
     if (!matched) {
       throw new Error('Aucun compte BZK trouvé pour ce numéro.');
     }

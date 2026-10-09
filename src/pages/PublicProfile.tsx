@@ -75,7 +75,7 @@ export const PublicProfile: React.FC<PublicProfileProps> = ({ userId, onNavigate
 
         <div>
           <div className="text-[10px] uppercase font-mono tracking-wider text-purple-400 font-bold mb-1">
-            Membre Officiel KAYDO FOLDER
+            Membre Officiel BZK FOLDER 🥷 BY KAYDO BZK 🥷
           </div>
           <h1 className="text-2xl font-black text-white">{userProfile.displayName}</h1>
         </div>

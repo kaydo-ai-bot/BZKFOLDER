@@ -17,35 +17,74 @@ import { db } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/error-handler';
 import { UserProfile, Gender } from '../types';
 
-export function normalizePhoneNumber(phone: string): string {
+export function normalizePhoneNumber(phone: string, country?: string): string {
   if (!phone) return '';
-  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
-  if (!cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned.replace(/\D/g, '');
-  } else {
-    cleaned = '+' + cleaned.slice(1).replace(/\D/g, '');
+  // Strip all non-digit characters
+  let digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+
+  // Remove leading double zero '00'
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
   }
-  return cleaned;
+
+  // Handle Haiti (+509):
+  // National numbers have 8 digits (e.g. 35975863 or 41815156)
+  // If digits has exactly 8 digits, prepend 509 -> "50935975863"
+  // If digits starts with 509 and has 11 digits (e.g. "50935975863"), keep as is
+  if (digits.length === 8) {
+    digits = '509' + digits;
+  } else if (digits.startsWith('509') && digits.length === 11) {
+    // Already in complete Haiti format (+509xxxxxxxx)
+  } else if (country) {
+    const match = country.match(/\(\+(\d+)\)/);
+    if (match && match[1]) {
+      const dialCode = match[1];
+      if (!digits.startsWith(dialCode)) {
+        digits = dialCode + digits;
+      }
+    }
+  }
+
+  return '+' + digits;
+}
+
+/**
+ * Strips all emojis and residual artifacts from a name to guarantee
+ * a clean string before applying the single BZK prefix emoji.
+ */
+export function cleanRawFirstName(rawName: string): string {
+  if (!rawName) return 'MEMBRE';
+  let clean = rawName.trim().replace(/^["'«»“”„]+|["'«»“”„]+$/g, '').trim();
+
+  // Strip any emoji characters (all Unicode emoji ranges)
+  try {
+    clean = clean.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Emoji}]/gu, '').trim();
+  } catch {
+    clean = clean.replace(/[🌸🥷🌪️✨🔥👑⭐💫💎🕊️]/g, '').trim();
+  }
+
+  // Strip prefix/suffix artifacts like BZK, 𝑩𝒁𝑲
+  clean = clean.replace(/\b(?:BZK|𝑩𝒁𝑲)\b/gi, '').trim();
+  clean = clean.replace(/^(?:BZK|𝑩𝒁𝑲)\s*/gi, '').trim();
+  clean = clean.replace(/\s*(?:BZK|𝑩𝒁𝑲)$/gi, '').trim();
+
+  return clean.trim() || 'MEMBRE';
 }
 
 /**
  * Generates official BZK badge and display name strictly adhering to:
- * Filles  : 🌸 NOM BZK 🌪️
- * Garçons : 🥷 NOM BZK 🌪️
+ * Exactly ONE prefix emoji:
+ * Filles  : 🌸 NOM 𝑩𝒁𝑲 🌪️
+ * Garçons : 🥷 NOM 𝑩𝒁𝑲 🌪️
  */
 export function generateBadgeAndDisplayName(firstName: string, gender: Gender) {
-  // Strip any accidental enclosing quotes
-  let cleanName = (firstName || 'MEMBRE').trim().replace(/^["'«»“”„]+|["'«»“”„]+$/g, '').trim();
-  // Remove any existing emojis or artifacts at the start (including duplicates)
-  cleanName = cleanName.replace(/^[🌸🥷🌪️\sBZK]+/g, '').trim();
-  if (!cleanName) cleanName = 'MEMBRE';
-
-  // Capitalize
+  const cleanName = cleanRawFirstName(firstName);
   const upperName = cleanName.toUpperCase();
   const BZK_STYLED = '𝑩𝒁𝑲';
 
   if (gender === 'female') {
-    const badge = `🌸 ${upperName} ${BZK_STYLED} 🌪️`;
+    const badge = `🌸 ${BZK_STYLED} 🌪️`;
     const displayName = `🌸 ${upperName} ${BZK_STYLED} 🌪️`;
     return {
       firstName: cleanName,
@@ -53,7 +92,7 @@ export function generateBadgeAndDisplayName(firstName: string, gender: Gender) {
       displayName,
     };
   } else {
-    const badge = `🥷 ${upperName} ${BZK_STYLED} 🌪️`;
+    const badge = `🥷 ${BZK_STYLED} 🌪️`;
     const displayName = `🥷 ${upperName} ${BZK_STYLED} 🌪️`;
     return {
       firstName: cleanName,
@@ -64,42 +103,34 @@ export function generateBadgeAndDisplayName(firstName: string, gender: Gender) {
 }
 
 /**
- * Met à jour, normalise et supprime les doublons de tous les contacts enregistrés
+ * Met à jour et normalise l'affichage de tous les contacts enregistrés SANS JAMAIS EN SUPPRIMER AUCUN.
+ * Tous les numéros restent en permanence conservés sur le site.
  */
-let hasMigrated_v4 = false;
+let hasMigrated_v6 = false;
 export async function syncExistingContactsFormat(): Promise<void> {
-  if (hasMigrated_v4) return;
-  hasMigrated_v4 = true;
+  if (hasMigrated_v6) return;
+  hasMigrated_v6 = true;
   try {
     const snap = await getDocs(collection(db, 'users'));
     if (snap.empty) return;
 
     const batch = writeBatch(db);
     let needUpdate = false;
-    const seenPhones = new Set<string>();
-    const toDelete: any[] = [];
 
     snap.docs.forEach((d) => {
       const u = d.data() as UserProfile;
-      const phoneNorm = u.phoneNormalized || normalizePhoneNumber(u.phone);
+      const phoneNorm = normalizePhoneNumber(u.phoneNormalized || u.phone, u.country);
 
-      // Deduplication: if phone already seen, delete duplicate
-      if (phoneNorm && seenPhones.has(phoneNorm)) {
-        toDelete.push(d.ref);
-        return;
-      }
-      if (phoneNorm) {
-        seenPhones.add(phoneNorm);
-      }
-
-      // Clean first name from any quotes AND emojis/artifacts
-      let cleanFirstName = (u.firstName || '').replace(/^["'«»“”„]+|["'«»“”„]+$/g, '').trim();
-      cleanFirstName = cleanFirstName.replace(/^[🌸🥷🌪️\sBZK]+/g, '').trim();
-      if (!cleanFirstName) cleanFirstName = 'MEMBRE';
-
+      // Clean first name from any quotes, emojis, and artifacts
+      const cleanFirstName = cleanRawFirstName(u.firstName || u.displayName);
       const computed = generateBadgeAndDisplayName(cleanFirstName, u.gender);
 
-      if (u.displayName !== computed.displayName || u.badge !== computed.badge || !u.phoneNormalized || u.firstName !== cleanFirstName) {
+      if (
+        u.displayName !== computed.displayName ||
+        u.badge !== computed.badge ||
+        u.phoneNormalized !== phoneNorm ||
+        u.firstName !== cleanFirstName
+      ) {
         batch.update(d.ref, {
           firstName: cleanFirstName,
           displayName: computed.displayName,
@@ -111,16 +142,11 @@ export async function syncExistingContactsFormat(): Promise<void> {
       }
     });
 
-    toDelete.forEach((ref) => {
-      batch.delete(ref);
-      needUpdate = true;
-    });
-
     if (needUpdate) {
       await batch.commit();
     }
   } catch (err) {
-    console.warn('Contacts format sync & deduplication:', err);
+    console.warn('Contacts format sync:', err);
   }
 }
 
@@ -140,13 +166,41 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   }
 }
 
-export async function checkPhoneExists(phoneNormalized: string): Promise<UserProfile | null> {
-  const path = 'users';
+export async function checkPhoneExists(phoneInput: string, country?: string): Promise<UserProfile | null> {
+  const norm = normalizePhoneNumber(phoneInput, country);
+  if (!norm) return null;
+
   try {
-    const q = query(collection(db, 'users'), where('phoneNormalized', '==', phoneNormalized), limit(1));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    return snap.docs[0].data() as UserProfile;
+    // 1. Direct query with normalized phone (+50935975863)
+    const q1 = query(collection(db, 'users'), where('phoneNormalized', '==', norm), limit(1));
+    const snap1 = await getDocs(q1);
+    if (!snap1.empty) return snap1.docs[0].data() as UserProfile;
+
+    // 2. Query with raw input
+    const trimmedInput = phoneInput.trim();
+    const q2 = query(collection(db, 'users'), where('phone', '==', trimmedInput), limit(1));
+    const snap2 = await getDocs(q2);
+    if (!snap2.empty) return snap2.docs[0].data() as UserProfile;
+
+    // 3. Query without the '+' sign (e.g. "50935975863")
+    const withoutPlus = norm.replace(/^\+/, '');
+    const q3 = query(collection(db, 'users'), where('phoneNormalized', '==', withoutPlus), limit(1));
+    const snap3 = await getDocs(q3);
+    if (!snap3.empty) return snap3.docs[0].data() as UserProfile;
+
+    // 4. Query with the 8 national digits if Haiti number
+    if (withoutPlus.startsWith('509') && withoutPlus.length === 11) {
+      const national8 = withoutPlus.slice(3);
+      const q4 = query(collection(db, 'users'), where('phoneNormalized', '==', `+${national8}`), limit(1));
+      const snap4 = await getDocs(q4);
+      if (!snap4.empty) return snap4.docs[0].data() as UserProfile;
+
+      const q5 = query(collection(db, 'users'), where('phone', '==', national8), limit(1));
+      const snap5 = await getDocs(q5);
+      if (!snap5.empty) return snap5.docs[0].data() as UserProfile;
+    }
+
+    return null;
   } catch (error) {
     console.warn('checkPhoneExists warning:', error);
     return null;
@@ -240,15 +294,15 @@ export async function clearAllUsers(): Promise<number> {
 }
 
 export async function getAllUsers(): Promise<UserProfile[]> {
-  const path = 'users';
   try {
     await syncExistingContactsFormat();
-    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-    const snap = await getDocs(q);
+    const snap = await getDocs(collection(db, 'users'));
     if (snap.empty) {
       return [];
     }
-    return snap.docs.map((d) => d.data() as UserProfile);
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserProfile));
+    list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return list;
   } catch (error) {
     console.warn('getAllUsers error:', error);
     return [];
@@ -257,12 +311,11 @@ export async function getAllUsers(): Promise<UserProfile[]> {
 
 export function subscribeToUsers(callback: (users: UserProfile[]) => void): () => void {
   syncExistingContactsFormat().catch(() => {});
-  const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-  
   return onSnapshot(
-    q,
+    collection(db, 'users'),
     (snapshot) => {
-      const usersList = snapshot.docs.map((d) => d.data() as UserProfile);
+      const usersList = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as UserProfile));
+      usersList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       callback(usersList);
     },
     (error) => {
