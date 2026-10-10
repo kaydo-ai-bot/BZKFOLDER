@@ -168,25 +168,31 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 export async function checkPhoneExists(phoneInput: string, country?: string): Promise<UserProfile | null> {
   const norm = normalizePhoneNumber(phoneInput, country);
-  if (!norm) return null;
+  if (!norm && !phoneInput) return null;
 
   try {
     // 1. Direct query with normalized phone (+50935975863)
-    const q1 = query(collection(db, 'users'), where('phoneNormalized', '==', norm), limit(1));
-    const snap1 = await getDocs(q1);
-    if (!snap1.empty) return snap1.docs[0].data() as UserProfile;
+    if (norm) {
+      const q1 = query(collection(db, 'users'), where('phoneNormalized', '==', norm), limit(1));
+      const snap1 = await getDocs(q1);
+      if (!snap1.empty) return snap1.docs[0].data() as UserProfile;
+    }
 
-    // 2. Query with raw input
+    // 2. Query with raw trimmed input
     const trimmedInput = phoneInput.trim();
-    const q2 = query(collection(db, 'users'), where('phone', '==', trimmedInput), limit(1));
-    const snap2 = await getDocs(q2);
-    if (!snap2.empty) return snap2.docs[0].data() as UserProfile;
+    if (trimmedInput) {
+      const q2 = query(collection(db, 'users'), where('phone', '==', trimmedInput), limit(1));
+      const snap2 = await getDocs(q2);
+      if (!snap2.empty) return snap2.docs[0].data() as UserProfile;
+    }
 
     // 3. Query without the '+' sign (e.g. "50935975863")
-    const withoutPlus = norm.replace(/^\+/, '');
-    const q3 = query(collection(db, 'users'), where('phoneNormalized', '==', withoutPlus), limit(1));
-    const snap3 = await getDocs(q3);
-    if (!snap3.empty) return snap3.docs[0].data() as UserProfile;
+    const withoutPlus = norm ? norm.replace(/^\+/, '') : '';
+    if (withoutPlus) {
+      const q3 = query(collection(db, 'users'), where('phoneNormalized', '==', withoutPlus), limit(1));
+      const snap3 = await getDocs(q3);
+      if (!snap3.empty) return snap3.docs[0].data() as UserProfile;
+    }
 
     // 4. Query with the 8 national digits if Haiti number
     if (withoutPlus.startsWith('509') && withoutPlus.length === 11) {
@@ -200,10 +206,42 @@ export async function checkPhoneExists(phoneInput: string, country?: string): Pr
       if (!snap5.empty) return snap5.docs[0].data() as UserProfile;
     }
 
+    // 5. In-memory fallback scan across all users to guarantee that variations like 35975863, 50935975863, and +50935975863 always match
+    const cleanDigits = phoneInput.replace(/\D/g, '');
+    if (cleanDigits.length >= 6) {
+      const allUsers = await getAllUsers();
+      const match = allUsers.find((u) => {
+        const uNorm = u.phoneNormalized || normalizePhoneNumber(u.phone, u.country);
+        if (norm && uNorm === norm) return true;
+        const uDigits = (u.phoneNormalized || u.phone || '').replace(/\D/g, '');
+        if (uDigits === cleanDigits) return true;
+        // Haiti 8 digits vs 11 digits (509 + 8 digits)
+        if (cleanDigits.length === 8 && uDigits === `509${cleanDigits}`) return true;
+        if (uDigits.length === 8 && cleanDigits === `509${uDigits}`) return true;
+        if (uDigits.endsWith(cleanDigits) && cleanDigits.length >= 8) return true;
+        if (cleanDigits.endsWith(uDigits) && uDigits.length >= 8) return true;
+        return false;
+      });
+      if (match) return match;
+    }
+
     return null;
   } catch (error) {
     console.warn('checkPhoneExists warning:', error);
-    return null;
+    try {
+      const cleanDigits = phoneInput.replace(/\D/g, '');
+      const allUsers = await getAllUsers();
+      const match = allUsers.find((u) => {
+        const uDigits = (u.phoneNormalized || u.phone || '').replace(/\D/g, '');
+        if (uDigits === cleanDigits) return true;
+        if (cleanDigits.length === 8 && uDigits === `509${cleanDigits}`) return true;
+        if (uDigits.length === 8 && cleanDigits === `509${uDigits}`) return true;
+        return false;
+      });
+      return match || null;
+    } catch {
+      return null;
+    }
   }
 }
 

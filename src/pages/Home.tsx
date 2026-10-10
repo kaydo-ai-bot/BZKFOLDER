@@ -1,6 +1,6 @@
 import React from 'react';
 import { Register } from './Register';
-import { FolderLock, Shield, Lock, ShieldCheck } from 'lucide-react';
+import { FolderLock, Shield, Lock, ShieldCheck, Download, ArrowRight } from 'lucide-react';
 
 interface HomeProps {
   onNavigate: (path: string) => void;
@@ -8,7 +8,7 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   return (
-    <div className="space-y-8 pb-16 animate-fadeIn max-w-2xl mx-auto px-2 sm:px-4">
+    <div className="space-y-6 pb-16 animate-fadeIn max-w-2xl mx-auto px-2 sm:px-4">
       
       {/* GRANDE ZONE LOGO / TITRE EN HAUT */}
       <div className="text-center space-y-3 pt-4 sm:pt-8 max-w-2xl mx-auto">
@@ -37,6 +37,26 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           <div className="w-8 sm:w-16 h-[2px] bg-gradient-to-l from-transparent to-emerald-500/60" />
         </div>
 
+      </div>
+
+      {/* BANNER ACCÈS TÉLÉCHARGEMENT RAPIDE */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 via-indigo-950/40 to-cyan-950/60 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-2.5 text-center sm:text-left">
+          <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-400">
+            <Download className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-white">Vous êtes déjà enregistré dans le folder ?</div>
+            <div className="text-[11px] text-gray-300">Vérifiez votre numéro et téléchargez le fichier complet des contacts BZK.</div>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigate('/download')}
+          className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 shadow-md shadow-purple-950 transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+        >
+          <span>Télécharger le Fichier</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* CARTE PRINCIPALE CONTENANT LE FORMULAIRE D'INSCRIPTION & L'APERÇU ÉTIRÉ */}

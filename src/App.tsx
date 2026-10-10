@@ -7,6 +7,7 @@ import { Footer } from './components/Footer';
 // Pages
 import { Home } from './pages/Home';
 import { Register } from './pages/Register';
+import { DownloadBzk } from './pages/DownloadBzk';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
 
@@ -49,7 +50,11 @@ function MainApp() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const isAdminRoute = currentPath.startsWith('/admin') || currentPath === '/numbers';
+  const cleanPath = currentPath.split('?')[0];
+  const urlParams = new URLSearchParams(currentPath.includes('?') ? currentPath.split('?')[1] : window.location.search);
+  const phoneParam = urlParams.get('phone') || undefined;
+
+  const isAdminRoute = cleanPath.startsWith('/admin') || cleanPath === '/numbers';
 
   // ========================================================
   // OWNER ONLY PROTECTED SPACE (/admin)
@@ -96,11 +101,12 @@ function MainApp() {
       <ToastContainer />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {currentPath === '/' && <Home onNavigate={navigate} />}
-        {currentPath === '/register' && <Home onNavigate={navigate} />}
-        {currentPath === '/privacy' && <Privacy />}
-        {currentPath === '/terms' && <Terms />}
-        {currentPath !== '/' && currentPath !== '/register' && currentPath !== '/privacy' && currentPath !== '/terms' && (
+        {cleanPath === '/' && <Home onNavigate={navigate} />}
+        {cleanPath === '/register' && <Home onNavigate={navigate} />}
+        {cleanPath === '/download' && <DownloadBzk onNavigate={navigate} />}
+        {cleanPath === '/privacy' && <Privacy />}
+        {cleanPath === '/terms' && <Terms />}
+        {cleanPath !== '/' && cleanPath !== '/register' && cleanPath !== '/download' && cleanPath !== '/privacy' && cleanPath !== '/terms' && (
           <Home onNavigate={navigate} />
         )}
       </main>

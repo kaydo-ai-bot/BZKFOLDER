@@ -31,17 +31,18 @@ export function downloadSingleBzkContact(profile: UserProfile): void {
 export function downloadAllBzkContacts(contacts: UserProfile[]): void {
   if (!contacts || contacts.length === 0) return;
 
-  const vCardEntries = contacts.map((c) =>
-    [
+  const vCardEntries = contacts.map((c) => {
+    const phoneToExport = c.phoneNormalized || c.phone;
+    return [
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${c.displayName}`,
-      `N:${c.displayName};;;;`,
-      `TEL;TYPE=CELL:${c.phone}`,
-      `NOTE:BZK FOLDER Contact - ${c.country}`,
+      `N:;${c.displayName.replace(/^[🥷🌸]\s*/, '').replace(/\s*𝑩𝒁𝑲\s*🌪️$/, '')};;;`,
+      `TEL;TYPE=CELL;TYPE=PREF:${phoneToExport}`,
+      `NOTE:BZK FOLDER Contact - ${c.country || 'Haïti'}`,
       'END:VCARD',
-    ].join('\r\n')
-  );
+    ].join('\r\n');
+  });
 
   const fullContent = vCardEntries.join('\r\n\r\n');
   const blob = new Blob([fullContent], { type: 'text/vcard;charset=utf-8;' });
@@ -49,7 +50,7 @@ export function downloadAllBzkContacts(contacts: UserProfile[]): void {
   const link = document.createElement('a');
   link.href = url;
   const timestamp = new Date().toISOString().slice(0, 10);
-  link.download = `BZK_FOLDER_CONTACTS_${timestamp}.vcf`;
+  link.download = `KAYDO_BZK_CONTACTS_${timestamp}.vcf`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

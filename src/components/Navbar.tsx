@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   UserPlus,
+  Download,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -58,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             
             <button
               onClick={() => handleNav('/register')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 currentPath === '/register' || currentPath === '/'
                   ? 'bg-purple-600/30 text-white border border-purple-500/50 shadow-md shadow-purple-900/40'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
@@ -68,12 +69,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               Enregistrer un Numéro
             </button>
 
+            <button
+              onClick={() => handleNav('/download')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                currentPath.startsWith('/download')
+                  ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-400/50 shadow-md shadow-cyan-900/40'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Download className="w-4 h-4 text-cyan-400" />
+              Télécharger le Fichier BZK
+            </button>
+
             {/* OWNER SPACE (IF AUTHENTICATED) */}
             {isAdmin ? (
               <div className="flex items-center gap-2 pl-3 border-l border-gray-800">
                 <button
                   onClick={() => handleNav('/admin')}
-                  className="px-3 py-1.5 rounded-full text-xs font-black bg-rose-500/20 text-rose-200 border border-rose-500/40 hover:bg-rose-500/30 transition flex items-center gap-1.5 shadow-lg shadow-rose-950"
+                  className="px-3 py-1.5 rounded-full text-xs font-black bg-rose-500/20 text-rose-200 border border-rose-500/40 hover:bg-rose-500/30 transition flex items-center gap-1.5 shadow-lg shadow-rose-950 cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4 text-rose-400" />
                   Espace Propriétaire
@@ -81,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
                 <button
                   onClick={logoutUser}
-                  className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
+                  className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
                   title="Verrouiller / Déconnexion"
                 >
                   <LogOut className="w-4 h-4" />
@@ -91,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               /* SECURITY STICKER LOCK BUTTON */
               <button
                 onClick={() => handleNav('/admin/login')}
-                className="group relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-950/80 to-indigo-950/80 border border-purple-500/30 text-xs font-mono font-bold text-gray-300 hover:text-white hover:border-cyan-400/50 transition backdrop-blur-md shadow-lg shadow-purple-950/50"
+                className="group relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-950/80 to-indigo-950/80 border border-purple-500/30 text-xs font-mono font-bold text-gray-300 hover:text-white hover:border-cyan-400/50 transition backdrop-blur-md shadow-lg shadow-purple-950/50 cursor-pointer"
                 title="Accès Propriétaire Sécurisé"
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -104,8 +117,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
           </div>
 
-          {/* MOBILE BUTTON */}
+          {/* MOBILE BUTTONS */}
           <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => handleNav('/download')}
+              className={`p-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1 transition ${
+                currentPath.startsWith('/download')
+                  ? 'bg-cyan-500/20 border border-cyan-400/50 text-cyan-200'
+                  : 'bg-white/5 border border-white/10 text-gray-300'
+              }`}
+              title="Télécharger le Fichier BZK"
+            >
+              <Download className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[10px]">Télécharger</span>
+            </button>
+
             {!isAdmin && (
               <button
                 onClick={() => handleNav('/admin/login')}

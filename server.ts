@@ -119,8 +119,8 @@ app.post('/api/admin/google-login', (req, res) => {
 
   res.cookie('kaydo_admin_session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
   });
 
@@ -155,8 +155,8 @@ app.post('/api/admin/login', (req, res) => {
 
   res.cookie('kaydo_admin_session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
   });
 
@@ -201,8 +201,8 @@ app.post('/api/admin/set-code', (req, res) => {
 
   res.cookie('kaydo_admin_session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
   });
 
@@ -222,7 +222,7 @@ app.get('/api/admin/status', (req, res) => {
       authenticated = true;
     } else {
       validAdminSessions.delete(token);
-      res.clearCookie('kaydo_admin_session');
+      res.clearCookie('kaydo_admin_session', { httpOnly: true, secure: true, sameSite: 'none' });
     }
   }
 
@@ -243,7 +243,7 @@ app.get('/api/admin/session', (req, res) => {
   const session = validAdminSessions.get(token);
   if (!session || Date.now() > session.expiresAt) {
     validAdminSessions.delete(token);
-    res.clearCookie('kaydo_admin_session');
+    res.clearCookie('kaydo_admin_session', { httpOnly: true, secure: true, sameSite: 'none' });
     return res.json({ authenticated: false });
   }
 
@@ -256,7 +256,7 @@ app.post('/api/admin/logout', (req, res) => {
   if (token) {
     validAdminSessions.delete(token);
   }
-  res.clearCookie('kaydo_admin_session');
+  res.clearCookie('kaydo_admin_session', { httpOnly: true, secure: true, sameSite: 'none' });
   return res.json({ success: true, message: 'Déconnexion réussie.' });
 });
 

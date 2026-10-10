@@ -11,6 +11,8 @@ import {
   PlusCircle,
   Shield,
   Lock,
+  Download,
+  ArrowRight,
 } from 'lucide-react';
 
 interface RegisterProps {
@@ -41,6 +43,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   const [country, setCountry] = useState('Haïti (+509)');
   const [gender, setGender] = useState<Gender>('male');
   const [loading, setLoading] = useState(false);
+
   const [registeredSuccess, setRegisteredSuccess] = useState<{
     displayName: string;
     badge: string;
@@ -125,11 +128,19 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
 
             <div className="pt-2 space-y-3">
               <button
-                onClick={handleResetForm}
-                className="w-full py-4 rounded-2xl text-sm font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 shadow-xl shadow-purple-600/30 border border-purple-400/30 transition transform active:scale-95 flex items-center justify-center gap-2"
+                onClick={() => onNavigate('/download')}
+                className="w-full py-4 rounded-2xl text-sm font-black text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 shadow-xl shadow-emerald-600/30 border border-emerald-400/30 transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <PlusCircle className="w-5 h-5" />
-                ENREGISTRER UN AUTRE NUMÉRO
+                <Download className="w-5 h-5 text-cyan-200" />
+                <span>TÉLÉCHARGER LE FICHIER BZK (.VCF) MAINTENANT</span>
+              </button>
+
+              <button
+                onClick={handleResetForm}
+                className="w-full py-3.5 rounded-2xl text-xs font-bold text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Enregistrer un autre numéro</span>
               </button>
             </div>
           </div>
@@ -148,6 +159,17 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
               <p className="text-xs sm:text-sm text-gray-400">
                 Enregistrez votre numéro pour recevoir automatiquement votre identité <span className="text-purple-300 font-bold">BZK</span> dans le folder.
               </p>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('/download')}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Déjà enregistré ? Télécharger directement le fichier BZK</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* LIVE BADGE PREVIEW BOX */}
